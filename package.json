@@ -1,7 +1,9 @@
 {
   "name": "utilkit",
+  "description": "Une suite d'outils pour développeurs 100% Client-Side (Zero Server) : Générateur QR Code, Base64 et Mots de Passe.",
   "private": true,
-  "version": "0.0.0",
+  "version": "3.0.0",
+  "author": "HOUINSOU Luc",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "jsbarcode": "^3.11.6",
     "qrcode": "^1.5.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"

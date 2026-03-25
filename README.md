@@ -11,12 +11,18 @@ Rapide, léger, respectueux de la vie privée et doté d'une interface soignée 
 - Téléchargement direct en PNG.
 - Support des thèmes (QR Code adapté au mode sombre/clair).
 
-### 2. Outil Base64
+### 2. Générateur de Code-barres
+- Support de plusieurs formats (CODE128, EAN13, UPC, ITF).
+- Génération en temps réel et prévisualisation.
+- Exportation au format PNG.
+- Intégration transparente avec les thèmes sombre et clair.
+
+### 3. Outil Base64
 - Encodage et décodage instantané.
 - Support complet de l'UTF-8.
 - Bouton "Swap" et copie rapide.
 
-### 3. Générateur de Mots de Passe
+### 4. Générateur de Mots de Passe
 - Cryptographiquement sécurisé.
 - Calcul de l'entropie et de la force en temps réel.
 - Options configurables (Majuscules, Chiffres, Symboles).

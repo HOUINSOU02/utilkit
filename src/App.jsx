@@ -6,6 +6,7 @@ import { useState, useCallback, useRef, useMemo, useEffect } from "react";
  * npm install --save-dev @types/qrcode
  */
 import QRCode from "qrcode";
+import JsBarcode from "jsbarcode";
 
 /* ─── Thèmes ─── */
 const THEMES = {
@@ -176,6 +177,77 @@ function QRGenerator({ isDark }) {
       <div style={{ display: "flex", justifyContent: "center" }}>
         <canvas ref={canvasRef}
           style={{ borderRadius: 10, border: "1px solid var(--border)", display: ready ? "block" : "none" }} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Barcode Generator ─── */
+function BarcodeGenerator({ isDark }) {
+  const [val, setVal] = useState("UTILKIT-3");
+  const [format, setFormat] = useState("CODE128");
+  const canvasRef = useRef(null);
+  const [error, setError] = useState(null);
+
+  const generate = useCallback(() => {
+    if (!val.trim() || !canvasRef.current) return;
+    setError(null);
+    try {
+      JsBarcode(canvasRef.current, val.trim(), {
+        format: format,
+        width: 2,
+        height: 80,
+        displayValue: true,
+        fontSize: 14,
+        background: isDark ? "#111118" : "#ffffff",
+        lineColor: isDark ? "#a78bfa" : "#000000",
+        textColor: isDark ? "#f0f0f5" : "#000000",
+        margin: 10
+      });
+    } catch (e) {
+      setError("Format ou données invalides");
+    }
+  }, [val, format, isDark]);
+
+  useEffect(() => {
+    generate();
+  }, [generate]);
+
+  const download = () => {
+    if (!canvasRef.current) return;
+    const a = document.createElement("a");
+    a.download = `barcode-${format}.png`;
+    a.href = canvasRef.current.toDataURL("image/png");
+    a.click();
+  };
+
+  return (
+    <div style={s.panel}>
+      <div style={{ display: "flex", gap: 6 }}>
+        {["CODE128", "EAN13", "UPC", "ITF"].map((f) => (
+          <button key={f}
+            onClick={() => { setFormat(f); setVal(f === "EAN13" ? "123456789012" : val); }}
+            style={{ ...s.tog, ...(format === f ? s.togActive : {}) }}>
+            {f}
+          </button>
+        ))}
+      </div>
+      <div>
+        <p style={s.label}>Texte ou Chiffres</p>
+        <input
+          style={s.inp}
+          placeholder="Ex: 12345678"
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+        />
+      </div>
+      {error && <p style={{ fontSize: 11, color: "#f87171" }}>⚠ {error}</p>}
+      <div style={{ display: "flex", gap: 10 }}>
+        <button style={s.btnPrimary} onClick={generate}>Générer</button>
+        <button style={s.btnGhost} onClick={download}>↓ Télécharger</button>
+      </div>
+      <div style={{ display: "flex", justifyContent: "center", background: "white", padding: 20, borderRadius: 10, border: "1px solid var(--border)" }}>
+        <canvas ref={canvasRef} style={{ width: "100%", height: "auto", maxWidth: 400 }} />
       </div>
     </div>
   );
@@ -361,6 +433,7 @@ function PasswordGenerator() {
 /* ─── App Shell ─── */
 const TOOLS = [
   { id: "qr",  label: "QR Code"  },
+  { id: "bc",  label: "Barcode"  },
   { id: "b64", label: "Base64"   },
   { id: "pw",  label: "Password" },
 ];
@@ -417,6 +490,7 @@ export default function App() {
         </div>
 
         {active === "qr"  && <QRGenerator isDark={theme === "dark"} />}
+        {active === "bc"  && <BarcodeGenerator isDark={theme === "dark"} />}
         {active === "b64" && <Base64Tool />}
         {active === "pw"  && <PasswordGenerator />}
 
