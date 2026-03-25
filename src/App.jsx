@@ -293,7 +293,7 @@ function Scanner() {
   }, [scanning, result]);
 
   const stopScanner = async () => {
-    if (scannerRef.current && scannerRef.current.isScanning) {
+    if (scannerRef.current) {
       try {
         await scannerRef.current.stop();
         scannerRef.current = null;
