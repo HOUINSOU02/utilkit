@@ -7,7 +7,7 @@ import { useState, useCallback, useRef, useMemo, useEffect } from "react";
  */
 import QRCode from "qrcode";
 import JsBarcode from "jsbarcode";
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { Html5Qrcode } from "html5-qrcode";
 
 /* ─── Thèmes ─── */
 const THEMES = {
@@ -268,29 +268,38 @@ function BarcodeGenerator({ isDark }) {
 function Scanner() {
   const [result, setResult] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [error, setError] = useState("");
+  const scannerRef = useRef(null);
 
   useEffect(() => {
-    let scanner = null;
-    if (scanning && !result) {
-      scanner = new Html5QrcodeScanner("reader", { 
-        fps: 10, 
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0
-      }, false);
+    if (scanning && !result && !scannerRef.current) {
+      const html5QrCode = new Html5Qrcode("reader");
+      scannerRef.current = html5QrCode;
 
-      scanner.render(
-        (text) => {
-          setResult(text);
-          setScanning(false);
-          scanner.clear();
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          setResult(decodedText);
+          stopScanner();
         },
-        () => {} // Erreurs de lecture silencieuses
-      );
+        () => {} // Ignore silent errors
+      ).catch(err => {
+        setError("Impossible d'accéder à la caméra. Vérifiez les permissions.");
+        setScanning(false);
+      });
     }
-    return () => {
-      if (scanner) scanner.clear().catch(e => console.error("Cleanup error", e));
-    };
+    return () => stopScanner();
   }, [scanning, result]);
+
+  const stopScanner = async () => {
+    if (scannerRef.current && scannerRef.current.isScanning) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current = null;
+      } catch (e) { console.warn(e); }
+    }
+  };
 
   const copy = () => {
     navigator.clipboard.writeText(result);
@@ -300,13 +309,14 @@ function Scanner() {
     <div style={s.panel}>
       {!scanning && !result && (
         <div style={{ textAlign: "center", padding: "20px 0" }}>
-          <button style={s.btnPrimary} onClick={() => setScanning(true)}>
+          <button style={s.btnPrimary} onClick={() => { setError(""); setScanning(true); }}>
             📷 Activer la caméra
           </button>
+          {error && <p style={{ fontSize: 12, color: "#f87171", marginTop: 10 }}>{error}</p>}
         </div>
       )}
 
-      {scanning && <div id="reader" style={{ width: "100%", borderRadius: 10, overflow: "hidden" }}></div>}
+      {scanning && <div id="reader" style={{ width: "100%", borderRadius: 12, overflow: "hidden", background: "#000" }}></div>}
 
       {result && (
         <div style={s.outputBox}>
