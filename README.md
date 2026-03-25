@@ -27,7 +27,7 @@ Rapide, léger, respectueux de la vie privée et doté d'une interface soignée 
 - Support complet de l'UTF-8.
 - Bouton "Swap" et copie rapide.
 
-### 4. Générateur de Mots de Passe
+### 5. Générateur de Mots de Passe
 - Cryptographiquement sécurisé.
 - Calcul de l'entropie et de la force en temps réel.
 - Options configurables (Majuscules, Chiffres, Symboles).
