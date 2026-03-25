@@ -17,7 +17,12 @@ Rapide, léger, respectueux de la vie privée et doté d'une interface soignée 
 - Exportation au format PNG.
 - Intégration transparente avec les thèmes sombre et clair.
 
-### 3. Outil Base64
+### 3. Scanner Universel
+- Lecture via webcam en temps réel.
+- Détection automatique (QR Codes et codes-barres 1D).
+- Extraction instantanée du contenu textuel.
+
+### 4. Outil Base64
 - Encodage et décodage instantané.
 - Support complet de l'UTF-8.
 - Bouton "Swap" et copie rapide.

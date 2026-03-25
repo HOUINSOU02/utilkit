@@ -7,6 +7,7 @@ import { useState, useCallback, useRef, useMemo, useEffect } from "react";
  */
 import QRCode from "qrcode";
 import JsBarcode from "jsbarcode";
+import { Html5QrcodeScanner } from "html5-qrcode";
 
 /* ─── Thèmes ─── */
 const THEMES = {
@@ -134,7 +135,11 @@ function QRGenerator({ isDark }) {
   const canvasRef = useRef(null);
 
   const generate = useCallback(() => {
-    if (!val.trim() || !canvasRef.current) return;
+    if (!val.trim() || !canvasRef.current) {
+      setReady(false);
+      return;
+    }
+
     QRCode.toCanvas(canvasRef.current, val.trim(), {
       width: size,
       margin: 2,
@@ -143,6 +148,10 @@ function QRGenerator({ isDark }) {
       errorCorrectionLevel: "H",
     }, (err) => { if (!err) setReady(true); });
   }, [val, size, isDark]);
+
+  useEffect(() => {
+    generate();
+  }, [generate]);
 
   const download = () => {
     if (!canvasRef.current) return;
@@ -160,18 +169,19 @@ function QRGenerator({ isDark }) {
           style={s.inp}
           placeholder="https://example.com ou n'importe quel texte..."
           value={val}
-          onChange={(e) => { setVal(e.target.value); setReady(false); }}
+          onChange={(e) => setVal(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && generate()}
         />
       </div>
       <div>
         <p style={s.label}>Taille — {size}px</p>
         <input type="range" min="150" max="400" step="50" value={size}
-          onChange={(e) => { setSize(+e.target.value); setReady(false); }}
+          onChange={(e) => setSize(+e.target.value)}
           style={s.range} />
       </div>
       <div style={{ display: "flex", gap: 10 }}>
         <button style={s.btnPrimary} onClick={generate} title="Créer le QR Code">Générer</button>
+        {val && <button style={s.btnGhost} onClick={() => setVal("")} title="Vider le champ">Effacer</button>}
         {ready && <button style={s.btnGhost} onClick={download} title="Enregistrer l'image PNG">↓ Télécharger</button>}
       </div>
       <div style={{ display: "flex", justifyContent: "center" }}>
@@ -243,12 +253,78 @@ function BarcodeGenerator({ isDark }) {
       </div>
       {error && <p style={{ fontSize: 11, color: "#f87171" }}>⚠ {error}</p>}
       <div style={{ display: "flex", gap: 10 }}>
-        <button style={s.btnPrimary} onClick={generate}>Générer</button>
-        <button style={s.btnGhost} onClick={download}>↓ Télécharger</button>
+        <button style={s.btnPrimary} onClick={generate} title="Générer le code-barres">Générer</button>
+        {val && <button style={s.btnGhost} onClick={() => setVal("")} title="Vider le champ">Effacer</button>}
+        <button style={s.btnGhost} onClick={download} title="Télécharger l'image PNG">↓ Télécharger</button>
       </div>
       <div style={{ display: "flex", justifyContent: "center", background: "white", padding: 20, borderRadius: 10, border: "1px solid var(--border)" }}>
         <canvas ref={canvasRef} style={{ width: "100%", height: "auto", maxWidth: 400 }} />
       </div>
+    </div>
+  );
+}
+
+/* ─── Scanner Tool ─── */
+function Scanner() {
+  const [result, setResult] = useState("");
+  const [scanning, setScanning] = useState(false);
+
+  useEffect(() => {
+    let scanner = null;
+    if (scanning && !result) {
+      scanner = new Html5QrcodeScanner("reader", { 
+        fps: 10, 
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0
+      }, false);
+
+      scanner.render(
+        (text) => {
+          setResult(text);
+          setScanning(false);
+          scanner.clear();
+        },
+        () => {} // Erreurs de lecture silencieuses
+      );
+    }
+    return () => {
+      if (scanner) scanner.clear().catch(e => console.error("Cleanup error", e));
+    };
+  }, [scanning, result]);
+
+  const copy = () => {
+    navigator.clipboard.writeText(result);
+  };
+
+  return (
+    <div style={s.panel}>
+      {!scanning && !result && (
+        <div style={{ textAlign: "center", padding: "20px 0" }}>
+          <button style={s.btnPrimary} onClick={() => setScanning(true)}>
+            📷 Activer la caméra
+          </button>
+        </div>
+      )}
+
+      {scanning && <div id="reader" style={{ width: "100%", borderRadius: 10, overflow: "hidden" }}></div>}
+
+      {result && (
+        <div style={s.outputBox}>
+          <p style={s.label}>Résultat du scan</p>
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 14, color: "var(--text-main)", wordBreak: "break-all" }}>
+            {result}
+          </span>
+          <div style={{ display: "flex", gap: 10, marginTop: 15 }}>
+            <button style={s.btnPrimary} onClick={copy}>Copier</button>
+            <button style={s.btnGhost} onClick={() => { setResult(""); setScanning(true); }}>
+              Scanner à nouveau
+            </button>
+          </div>
+        </div>
+      )}
+      <p style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "center" }}>
+        Supporte QR Codes, EAN, Code128, UPC, etc.
+      </p>
     </div>
   );
 }
@@ -434,6 +510,7 @@ function PasswordGenerator() {
 const TOOLS = [
   { id: "qr",  label: "QR Code"  },
   { id: "bc",  label: "Barcode"  },
+  { id: "scan", label: "Scanner"  },
   { id: "b64", label: "Base64"   },
   { id: "pw",  label: "Password" },
 ];
@@ -491,6 +568,7 @@ export default function App() {
 
         {active === "qr"  && <QRGenerator isDark={theme === "dark"} />}
         {active === "bc"  && <BarcodeGenerator isDark={theme === "dark"} />}
+        {active === "scan" && <Scanner />}
         {active === "b64" && <Base64Tool />}
         {active === "pw"  && <PasswordGenerator />}
 
